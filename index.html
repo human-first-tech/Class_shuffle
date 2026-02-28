@@ -6,92 +6,558 @@
 <title>Student Division Reshuffler</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
-  .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
-  h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
-  .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 2rem; }
-  .step { display: none; }
-  .step.active { display: block; }
-  .card { background: #fff; border-radius: 12px; padding: 1.5rem 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
-  .card h2 { font-size: 1.15rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-  .card h2 .badge { background: #e8eaf6; color: #3949ab; font-size: 0.75rem; padding: 2px 10px; border-radius: 20px; }
-  label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.35rem; color: #444; }
-  select, input[type="text"], input[type="number"] {
-    width: 100%; padding: 0.55rem 0.75rem; border: 1.5px solid #d0d5dd; border-radius: 8px;
-    font-size: 0.9rem; background: #fff; transition: border-color 0.2s;
+  :root {
+    --navy: #0f1b2d;
+    --navy-light: #1a2a42;
+    --navy-muted: #2d3e56;
+    --gold: #c8a44e;
+    --gold-light: #e8d5a0;
+    --gold-pale: #f5edda;
+    --cream: #faf8f3;
+    --cream-dark: #f0ece3;
+    --ink: #1c1c1c;
+    --ink-light: #4a4a4a;
+    --ink-muted: #8a8578;
+    --border: #e2ddd3;
+    --success: #3a7d44;
+    --success-light: #e6f2e8;
+    --danger: #a63d40;
+    --danger-light: #faeaea;
+    --tier-high: #d4edda;
+    --tier-med: #fff3cd;
+    --tier-low: #f8d7da;
+    --shadow-sm: 0 1px 3px rgba(15,27,45,0.06);
+    --shadow-md: 0 4px 12px rgba(15,27,45,0.08);
+    --shadow-lg: 0 8px 30px rgba(15,27,45,0.1);
+    --radius: 10px;
   }
-  select:focus, input:focus { outline: none; border-color: #3949ab; }
-  .field-group { margin-bottom: 1rem; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
-  .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.4rem; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-  .btn-primary { background: #3949ab; color: #fff; }
-  .btn-primary:hover { background: #303f9f; }
-  .btn-secondary { background: #e8eaf6; color: #3949ab; }
-  .btn-secondary:hover { background: #c5cae9; }
-  .btn-success { background: #2e7d32; color: #fff; }
-  .btn-success:hover { background: #1b5e20; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
-  /* Upload area */
-  .drop-zone { border: 2px dashed #c5cae9; border-radius: 12px; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.2s; }
-  .drop-zone:hover, .drop-zone.dragover { border-color: #3949ab; background: #e8eaf6; }
-  .drop-zone p { color: #666; margin-top: 0.5rem; font-size: 0.9rem; }
-  .drop-zone .icon { font-size: 2.5rem; }
-  .file-info { margin-top: 1rem; padding: 0.75rem 1rem; background: #e8f5e9; border-radius: 8px; font-size: 0.85rem; color: #2e7d32; }
-  /* Mapping table */
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Subtle paper grain overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ═══ Header bar ═══ */
+  .header-bar {
+    background: var(--navy);
+    padding: 1.25rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .header-bar::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+  }
+  .header-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+  }
+  .header-bar h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #fff;
+    letter-spacing: 0.01em;
+  }
+  .header-bar .subtitle {
+    font-size: 0.82rem;
+    color: var(--gold-light);
+    font-weight: 400;
+  }
+
+  /* ═══ Main container ═══ */
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem 3rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ═══ Stepper ═══ */
+  .stepper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    margin: 2rem auto 2.5rem;
+    max-width: 700px;
+    position: relative;
+  }
+  .stepper-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  .stepper-item .step-num {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: var(--cream-dark);
+    color: var(--ink-muted);
+    border: 2px solid var(--border);
+    transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+  }
+  .stepper-item .step-label {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    text-align: center;
+    transition: color 0.3s;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  /* Connector lines */
+  .stepper-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: calc(50% + 22px);
+    width: calc(100% - 44px);
+    height: 2px;
+    background: var(--border);
+    transition: background 0.4s;
+    z-index: -1;
+  }
+  /* States */
+  .stepper-item.active .step-num {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+    box-shadow: 0 0 0 4px rgba(15,27,45,0.12);
+  }
+  .stepper-item.active .step-label { color: var(--navy); }
+  .stepper-item.done .step-num {
+    background: var(--success);
+    color: #fff;
+    border-color: var(--success);
+  }
+  .stepper-item.done .step-label { color: var(--success); }
+  .stepper-item.done::after { background: var(--success); }
+  .stepper-item.done .step-num::before {
+    content: '';
+    display: none;
+  }
+
+  /* ═══ Step transitions ═══ */
+  .step { display: none; }
+  .step.active {
+    display: block;
+    animation: stepIn 0.35s ease-out;
+  }
+  @keyframes stepIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ═══ Cards ═══ */
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 1.75rem 2rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--gold);
+    position: relative;
+  }
+  .card h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--navy);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    letter-spacing: 0.01em;
+  }
+  .card h2 .badge {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--gold-light);
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .card p.desc {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    margin-bottom: 1rem;
+  }
+
+  /* ═══ Form elements ═══ */
+  label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.8rem;
+    margin-bottom: 0.35rem;
+    color: var(--ink-light);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: #fff;
+    color: var(--ink);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  select:focus, input:focus {
+    outline: none;
+    border-color: var(--navy-muted);
+    box-shadow: 0 0 0 3px rgba(15,27,45,0.08);
+  }
+  .field-group { margin-bottom: 1.25rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+
+  /* ═══ Buttons ═══ */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: var(--navy-light);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink-light);
+    border: 1.5px solid var(--border);
+  }
+  .btn-secondary:hover {
+    background: var(--cream-dark);
+    border-color: var(--ink-muted);
+  }
+  .btn-success {
+    background: var(--success);
+    color: #fff;
+  }
+  .btn-success:hover {
+    background: #2e6b36;
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+  .btn-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ═══ Upload area ═══ */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 3.5rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: var(--cream);
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--gold);
+    background: var(--gold-pale);
+  }
+  .drop-zone .upload-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 1rem;
+    background: var(--navy);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .drop-zone .upload-icon svg {
+    width: 24px; height: 24px;
+    stroke: var(--gold-light);
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .drop-zone .drop-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.05rem;
+    color: var(--navy);
+    margin-bottom: 0.35rem;
+  }
+  .drop-zone .drop-sub {
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+  }
+  .file-info {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--success-light);
+    border: 1px solid #b7dfc0;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    color: var(--success);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .file-info::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .error-msg {
+    color: var(--danger);
+    font-size: 0.82rem;
+    margin-top: 0.5rem;
+    font-weight: 500;
+  }
+
+  /* ═══ Mapping table ═══ */
   .mapping-table { width: 100%; border-collapse: collapse; }
-  .mapping-table th, .mapping-table td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #eee; }
-  .mapping-table th { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.03em; }
-  .mapping-table select { width: 200px; }
-  .tag { display: inline-block; font-size: 0.7rem; padding: 1px 8px; border-radius: 10px; font-weight: 600; }
-  .tag-required { background: #fce4ec; color: #c62828; }
-  .tag-optional { background: #e0f2f1; color: #00695c; }
-  .tag-auto { background: #e8eaf6; color: #3949ab; }
-  /* Config */
-  .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
-  .checkbox-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: #3949ab; }
-  .checkbox-row label { margin-bottom: 0; font-weight: 500; }
-  .indent { margin-left: 1.5rem; }
-  .tier-info { background: #f5f5f5; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.85rem; margin-top: 0.75rem; }
-  .tier-info code { background: #e8eaf6; padding: 1px 6px; border-radius: 4px; font-size: 0.8rem; }
-  /* Preview tables */
-  .preview-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.75rem; }
-  .preview-table th { background: #3949ab; color: #fff; padding: 0.5rem 0.75rem; text-align: center; font-weight: 600; }
-  .preview-table td { padding: 0.45rem 0.75rem; text-align: center; border-bottom: 1px solid #eee; }
-  .preview-table tr:nth-child(even) { background: #f8f9fa; }
-  .preview-table .row-label { text-align: left; font-weight: 600; }
-  .section-label td { background: #e8eaf6; font-weight: 700; text-align: left !important; padding-top: 0.7rem; }
-  /* Stepper */
-  .stepper { display: flex; gap: 0; margin-bottom: 2rem; }
-  .stepper-item { flex: 1; text-align: center; padding: 0.7rem 0.5rem; font-size: 0.8rem; font-weight: 600; color: #999; border-bottom: 3px solid #ddd; transition: all 0.3s; }
-  .stepper-item.done { color: #2e7d32; border-color: #2e7d32; }
-  .stepper-item.active { color: #3949ab; border-color: #3949ab; }
-  .error-msg { color: #c62828; font-size: 0.85rem; margin-top: 0.5rem; }
-  .student-table-scroll { max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
+  .mapping-table th {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    font-size: 0.7rem;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border);
+  }
+  .mapping-table td {
+    padding: 0.65rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #f0ece3;
+    font-size: 0.88rem;
+  }
+  .mapping-table tr:hover { background: var(--cream); }
+  .mapping-table select { width: 210px; font-size: 0.82rem; }
+  .tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .tag-required { background: var(--danger-light); color: var(--danger); }
+  .tag-optional { background: #e8f0e8; color: #3a6b3a; }
+  .tag-auto { background: var(--gold-pale); color: #8a6d1b; }
+
+  /* ═══ Config section ═══ */
+  .divider {
+    margin: 1.5rem 0;
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+  .checkbox-row input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--navy);
+    cursor: pointer;
+  }
+  .checkbox-row label {
+    margin-bottom: 0;
+    font-weight: 500;
+    font-size: 0.88rem;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--ink);
+  }
+  .indent { margin-left: 1.75rem; margin-top: 0.5rem; }
+  .tier-info {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.82rem;
+    margin-top: 0.75rem;
+    color: var(--ink-light);
+  }
+  .tier-info code {
+    background: var(--navy);
+    color: var(--gold-light);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ═══ Preview tables ═══ */
+  .preview-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.82rem;
+    margin-top: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .preview-table th {
+    background: var(--navy);
+    color: var(--gold-light);
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .preview-table td {
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+    border-bottom: 1px solid #f0ece3;
+  }
+  .preview-table tr:nth-child(even) { background: var(--cream); }
+  .preview-table tr:hover { background: var(--gold-pale); }
+  .preview-table .row-label {
+    text-align: left;
+    font-weight: 600;
+    color: var(--navy);
+  }
+  .section-label td {
+    background: var(--cream-dark) !important;
+    font-weight: 700;
+    text-align: left !important;
+    padding-top: 0.75rem;
+    color: var(--navy-muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--border) !important;
+  }
+
+  /* ═══ Division detail section ═══ */
+  .div-detail-title {
+    font-family: 'DM Serif Display', serif;
+    color: var(--navy);
+    font-size: 1rem;
+    margin: 1.5rem 0 0.5rem;
+    padding-left: 0.5rem;
+    border-left: 3px solid var(--gold);
+  }
+
+  /* ═══ Responsive ═══ */
+  @media (max-width: 640px) {
+    .container { padding: 0 1rem 2rem; }
+    .card { padding: 1.25rem 1.25rem; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .header-inner { flex-direction: column; gap: 0.25rem; }
+    .stepper { gap: 0; }
+    .stepper-item .step-label { font-size: 0.65rem; }
+    .mapping-table select { width: 150px; }
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>Student Division Reshuffler</h1>
-  <p class="subtitle">Upload student data, configure constraints, and generate balanced division allocations.</p>
 
+<!-- ═══ Header ═══ -->
+<div class="header-bar">
+  <div class="header-inner">
+    <h1>Student Division Reshuffler</h1>
+    <p class="subtitle">Balanced allocation with multi-constraint optimization</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ═══ Stepper ═══ -->
   <div class="stepper">
-    <div class="stepper-item active" id="st1">1. Upload</div>
-    <div class="stepper-item" id="st2">2. Map Columns</div>
-    <div class="stepper-item" id="st3">3. Configure</div>
-    <div class="stepper-item" id="st4">4. Preview & Download</div>
+    <div class="stepper-item active" id="st1">
+      <div class="step-num">1</div>
+      <span class="step-label">Upload</span>
+    </div>
+    <div class="stepper-item" id="st2">
+      <div class="step-num">2</div>
+      <span class="step-label">Map Columns</span>
+    </div>
+    <div class="stepper-item" id="st3">
+      <div class="step-num">3</div>
+      <span class="step-label">Configure</span>
+    </div>
+    <div class="stepper-item" id="st4">
+      <div class="step-num">4</div>
+      <span class="step-label">Download</span>
+    </div>
   </div>
 
-  <!-- STEP 1: Upload -->
+  <!-- ═══ STEP 1: Upload ═══ -->
   <div class="step active" id="step1">
     <div class="card">
       <h2>Upload Student Data <span class="badge">.xlsx</span></h2>
       <div class="drop-zone" id="dropZone">
-        <div class="icon">&#128196;</div>
-        <p><strong>Drop your .xlsx file here</strong> or click to browse</p>
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="drop-title">Drop your spreadsheet here</div>
+        <div class="drop-sub">or click to browse &mdash; accepts .xlsx, .xls, .csv</div>
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
       </div>
       <div id="fileInfo" class="file-info" style="display:none"></div>
@@ -99,11 +565,11 @@
     </div>
   </div>
 
-  <!-- STEP 2: Column Mapping -->
+  <!-- ═══ STEP 2: Column Mapping ═══ -->
   <div class="step" id="step2">
     <div class="card">
       <h2>Column Mapping</h2>
-      <p style="font-size:0.85rem;color:#666;margin-bottom:1rem;">Columns were auto-detected. Please verify and correct if needed.</p>
+      <p class="desc">Columns were auto-detected from your file headers. Verify each mapping and correct if needed.</p>
       <table class="mapping-table" id="mappingTable"></table>
       <div id="mappingError" class="error-msg"></div>
       <div class="btn-row">
@@ -113,27 +579,28 @@
     </div>
   </div>
 
-  <!-- STEP 3: Configuration -->
+  <!-- ═══ STEP 3: Configuration ═══ -->
   <div class="step" id="step3">
     <div class="card">
       <h2>Allocation Settings</h2>
       <div class="grid-2">
         <div class="field-group">
-          <label>Current Grade (students are in)</label>
-          <input type="text" id="currentGrade" placeholder="e.g. 2" value="">
+          <label>Current Grade</label>
+          <input type="text" id="currentGrade" placeholder="e.g. 2, 7">
         </div>
         <div class="field-group">
           <label>Number of Divisions</label>
           <select id="numDivisions">
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4" selected>4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
+            <option value="2">2 Divisions</option>
+            <option value="3">3 Divisions</option>
+            <option value="4" selected>4 Divisions</option>
+            <option value="5">5 Divisions</option>
+            <option value="6">6 Divisions</option>
           </select>
         </div>
       </div>
-      <hr style="margin:1rem 0;border:none;border-top:1px solid #eee;">
+
+      <hr class="divider">
       <h2>Religion Grouping</h2>
       <div class="checkbox-row">
         <input type="checkbox" id="enableReligion" onchange="toggleReligionConfig()">
@@ -151,7 +618,8 @@
           </div>
         </div>
       </div>
-      <hr style="margin:1rem 0;border:none;border-top:1px solid #eee;">
+
+      <hr class="divider">
       <h2>Performance Tiers</h2>
       <div class="tier-info" id="tierInfo">Upload data to see tier boundaries.</div>
       <div id="configError" class="error-msg"></div>
@@ -162,7 +630,7 @@
     </div>
   </div>
 
-  <!-- STEP 4: Preview & Download -->
+  <!-- ═══ STEP 4: Preview & Download ═══ -->
   <div class="step" id="step4">
     <div class="card">
       <h2>Allocation Summary</h2>
@@ -174,7 +642,10 @@
     </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goToStep(3)">Back</button>
-      <button class="btn btn-success" onclick="downloadXlsx()">Download .xlsx</button>
+      <button class="btn btn-success" onclick="downloadXlsx()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download .xlsx
+      </button>
     </div>
   </div>
 </div>
@@ -183,10 +654,10 @@
 // ─── State ───
 let rawHeaders = [];
 let rawRows = [];
-let columnMap = {};  // { name, gender, religion, house, percentage, roll, caste, division }
-let students = [];   // parsed student objects
-let allocations = {}; // divLabel -> [student]
-let tierBounds = {};  // { highMin, lowMax }
+let columnMap = {};
+let students = [];
+let allocations = {};
+let tierBounds = {};
 
 const REQUIRED_FIELDS = ['name', 'gender', 'religion', 'house', 'percentage'];
 const OPTIONAL_FIELDS = ['roll', 'caste', 'division'];
@@ -233,7 +704,6 @@ function handleFile(file) {
       const sheet = wb.Sheets[sheetName];
       const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
-      // Find header row (first row with 4+ non-empty cells)
       let headerIdx = 0;
       for (let i = 0; i < Math.min(data.length, 10); i++) {
         const nonEmpty = data[i].filter(c => String(c).trim() !== '').length;
@@ -246,7 +716,7 @@ function handleFile(file) {
         return nonEmpty >= 3;
       });
 
-      document.getElementById('fileInfo').style.display = 'block';
+      document.getElementById('fileInfo').style.display = 'flex';
       document.getElementById('fileInfo').textContent =
         `Loaded "${file.name}" — Sheet: "${sheetName}" — ${rawRows.length} students, ${rawHeaders.length} columns`;
 
@@ -303,7 +773,7 @@ function buildMappingUI() {
     html += `<tr>
       <td><strong>${FIELD_LABELS[field]}</strong></td>
       <td><span class="tag ${tagClass}">${tagText}</span></td>
-      <td>${autoIdx !== undefined ? `<span class="tag tag-auto">Auto</span> ${autoLabel}` : '<span style="color:#999">Not detected</span>'}</td>
+      <td>${autoIdx !== undefined ? `<span class="tag tag-auto">Auto</span> ${autoLabel}` : '<span style="color:var(--ink-muted)">Not detected</span>'}</td>
       <td><select id="map_${field}">
         <option value="">— Skip —</option>
         ${rawHeaders.map((h, i) => `<option value="${i}" ${i === autoIdx ? 'selected' : ''}>${h}</option>`).join('')}
@@ -321,7 +791,6 @@ function confirmMapping() {
     const val = document.getElementById('map_' + field).value;
     if (val !== '') columnMap[field] = parseInt(val);
   }
-  // Validate required
   for (const field of REQUIRED_FIELDS) {
     if (columnMap[field] === undefined) {
       document.getElementById('mappingError').textContent = `"${FIELD_LABELS[field]}" is required. Please map it to a column.`;
@@ -346,7 +815,7 @@ function parseStudents() {
   for (const row of rawRows) {
     const get = field => columnMap[field] !== undefined ? row[columnMap[field]] : '';
     const pct = parseFloat(get('percentage'));
-    if (isNaN(pct)) continue; // skip rows without valid percentage
+    if (isNaN(pct)) continue;
 
     students.push({
       name: normalize(get('name')),
@@ -366,12 +835,10 @@ function parseStudents() {
 
 // ─── Step 3: Configuration ───
 function setupConfigStep() {
-  // Detect religions
   const religions = [...new Set(students.map(s => s.religion))].sort();
   const relSelect = document.getElementById('religionSelect');
   relSelect.innerHTML = religions.map(r => `<option value="${r}">${r} (${students.filter(s => s.religion === r).length})</option>`).join('');
 
-  // Pre-select Christian if present
   const christianOpt = religions.find(r => r.toLowerCase() === 'christian');
   if (christianOpt) {
     relSelect.value = christianOpt;
@@ -379,10 +846,7 @@ function setupConfigStep() {
     toggleReligionConfig();
   }
 
-  // Division labels
   updateDivisionDropdown();
-
-  // Compute & show tiers
   computeTiers();
 }
 
@@ -392,7 +856,7 @@ function updateDivisionDropdown() {
   sel.innerHTML = '';
   for (let i = 0; i < n; i++) {
     const letter = String.fromCharCode(65 + i);
-    sel.innerHTML += `<option value="${letter}">${letter}</option>`;
+    sel.innerHTML += `<option value="${letter}">Division ${letter}</option>`;
   }
 }
 
@@ -419,9 +883,6 @@ function computeTiers() {
     else if (i < medCut) s.tier = 'Medium';
     else s.tier = 'Low';
   });
-
-  // Write tiers back to main students array by matching references
-  // (sorted array holds same object references)
 
   document.getElementById('tierInfo').innerHTML =
     `<strong>Auto-computed from ${n} students (tercile split):</strong><br>` +
@@ -451,17 +912,13 @@ function runAllocation() {
     targetDiv = document.getElementById('targetDivision').value;
   }
 
-  // Initialize allocations
   allocations = {};
   for (const label of divLabels) allocations[label] = [];
 
-  // Ensure tiers are assigned
   computeTiers();
 
-  // Deep copy students to avoid mutation issues
   let pool = students.map(s => ({ ...s }));
 
-  // ─── Step 1: Religion grouping ───
   const targetDivLabel = nextGrade + targetDiv;
   if (useReligion && religionName) {
     const religionStudents = pool.filter(s => s.religion.toLowerCase() === religionName.toLowerCase());
@@ -473,24 +930,17 @@ function runAllocation() {
     pool = rest;
   }
 
-  // ─── Step 2: Multi-constraint allocation ───
-  // Sort remaining divisions by current size (ascending) to fill evenly
-  const otherDivs = divLabels.filter(d => d !== targetDivLabel || !useReligion);
-  // If religion grouping is on, remaining go to all divs including target
   const targetDivs = useReligion ? divLabels : divLabels;
 
-  // Group by tier, then gender, then sort by house for spread
   for (const tier of ['High', 'Medium', 'Low']) {
     const tierStudents = pool.filter(s => s.tier === tier);
 
     for (const gender of ['M', 'F']) {
       const group = tierStudents.filter(s => s.gender === gender);
-      // Sort by house to spread houses across divisions
       const houses = [...new Set(students.map(s => s.house))].sort();
       group.sort((a, b) => houses.indexOf(a.house) - houses.indexOf(b.house));
 
       for (const student of group) {
-        // Pick division with lowest count, using multi-criteria tiebreaking
         const bestDiv = pickBestDivision(targetDivs, student, allocations, students.length, numDiv);
         student.newDivision = bestDiv;
         allocations[bestDiv].push(student);
@@ -498,7 +948,6 @@ function runAllocation() {
     }
   }
 
-  // ─── Step 3: Balancing pass ───
   balanceDivisions(allocations, divLabels, useReligion ? religionName : null);
 
   renderPreview(divLabels, nextGrade);
@@ -506,30 +955,18 @@ function runAllocation() {
 }
 
 function pickBestDivision(divLabels, student, allocations, totalStudents, numDiv) {
-  const idealPerDiv = totalStudents / numDiv;
-
   let bestDiv = divLabels[0];
   let bestScore = Infinity;
 
   for (const div of divLabels) {
     const group = allocations[div];
     const count = group.length;
-
-    // Penalty for total count imbalance (primary — want equal sizes)
     const countScore = count;
-
-    // Penalty for gender imbalance within division
     const genderCount = group.filter(s => s.gender === student.gender).length;
     const otherGenderCount = count - genderCount;
-    const genderImbalance = (genderCount + 1) - otherGenderCount; // after adding
-
-    // Penalty for tier imbalance
+    const genderImbalance = (genderCount + 1) - otherGenderCount;
     const tierCount = group.filter(s => s.tier === student.tier).length;
-
-    // Penalty for house concentration
     const houseCount = group.filter(s => s.house === student.house).length;
-
-    // Weighted composite score (lower = better)
     const score = countScore * 100 + genderImbalance * 10 + tierCount * 5 + houseCount * 2;
 
     if (score < bestScore) {
@@ -541,11 +978,9 @@ function pickBestDivision(divLabels, student, allocations, totalStudents, numDiv
 }
 
 function balanceDivisions(allocations, divLabels, protectedReligion) {
-  // Multiple passes to fix gender and tier imbalances
   for (let pass = 0; pass < 5; pass++) {
     let swapped = false;
 
-    // Check gender balance
     for (const gender of ['M', 'F']) {
       const counts = divLabels.map(d => ({
         div: d,
@@ -555,8 +990,6 @@ function balanceDivisions(allocations, divLabels, protectedReligion) {
       const minDiv = counts.reduce((a, b) => a.count < b.count ? a : b);
 
       if (maxDiv.count - minDiv.count > 1) {
-        // Try to swap: move a student of this gender from max to min,
-        // and a student of opposite gender from min to max
         const candidate = allocations[maxDiv.div].find(s =>
           s.gender === gender &&
           (!protectedReligion || s.religion.toLowerCase() !== protectedReligion.toLowerCase())
@@ -567,7 +1000,6 @@ function balanceDivisions(allocations, divLabels, protectedReligion) {
         );
 
         if (candidate && swapCandidate) {
-          // Perform swap
           allocations[maxDiv.div] = allocations[maxDiv.div].filter(s => s !== candidate);
           allocations[minDiv.div] = allocations[minDiv.div].filter(s => s !== swapCandidate);
           candidate.newDivision = minDiv.div;
@@ -579,7 +1011,6 @@ function balanceDivisions(allocations, divLabels, protectedReligion) {
       }
     }
 
-    // Check tier balance
     for (const tier of ['High', 'Medium', 'Low']) {
       const counts = divLabels.map(d => ({
         div: d,
@@ -589,14 +1020,10 @@ function balanceDivisions(allocations, divLabels, protectedReligion) {
       const minDiv = counts.reduce((a, b) => a.count < b.count ? a : b);
 
       if (maxDiv.count - minDiv.count > 1) {
-        // Find a student in maxDiv with this tier to swap with a student in minDiv with a different tier
         const candidate = allocations[maxDiv.div].find(s =>
           s.tier === tier &&
           (!protectedReligion || s.religion.toLowerCase() !== protectedReligion.toLowerCase())
         );
-        // Find someone in minDiv who has a different tier and whose tier is over-represented in minDiv
-        const minDivTiers = {};
-        for (const s of allocations[minDiv.div]) minDivTiers[s.tier] = (minDivTiers[s.tier] || 0) + 1;
         const swapCandidate = allocations[minDiv.div].find(s =>
           s.tier !== tier &&
           s.gender === (candidate ? candidate.gender : 'M') &&
@@ -624,7 +1051,6 @@ function renderPreview(divLabels, nextGrade) {
   const houses = [...new Set(students.map(s => s.house))].sort();
   const religions = [...new Set(students.map(s => s.religion))].sort();
 
-  // Summary table
   let html = '<table class="preview-table"><thead><tr><th>Metric</th>';
   for (const d of divLabels) html += `<th>${d}</th>`;
   html += '<th>Total</th></tr></thead><tbody>';
@@ -667,11 +1093,10 @@ function renderPreview(divLabels, nextGrade) {
 
   document.getElementById('summaryPreview').innerHTML = html;
 
-  // Per-division house x gender breakdown
   let detailHtml = '';
   for (const d of divLabels) {
     const group = allocations[d];
-    detailHtml += `<h3 style="margin:1rem 0 0.5rem;font-size:1rem;">${d} — ${group.length} students</h3>`;
+    detailHtml += `<div class="div-detail-title">${d} &mdash; ${group.length} students</div>`;
     detailHtml += '<table class="preview-table"><thead><tr><th>House</th><th>Male</th><th>Female</th><th>Total</th></tr></thead><tbody>';
     for (const h of houses) {
       const hStudents = group.filter(s => s.house === h);
@@ -686,14 +1111,14 @@ function renderPreview(divLabels, nextGrade) {
 
 // ─── Excel Styling Constants (matching reference file) ───
 const XL = {
-  headerBg:     'FF2F5496', // dark blue
-  headerFont:   'FFFFFFFF', // white
-  tierHigh:     'FFC6EFCE', // green
-  tierMed:      'FFFFEB9C', // amber
-  tierLow:      'FFFFC7CE', // pink
-  divisionBg:   'FFD6E4F0', // light blue tint
-  subHeaderBg:  'FFD9E2F3', // lighter blue
-  sectionTitle: 'FF2F5496', // dark blue text
+  headerBg:     'FF2F5496',
+  headerFont:   'FFFFFFFF',
+  tierHigh:     'FFC6EFCE',
+  tierMed:      'FFFFEB9C',
+  tierLow:      'FFFFC7CE',
+  divisionBg:   'FFD6E4F0',
+  subHeaderBg:  'FFD9E2F3',
+  sectionTitle: 'FF2F5496',
   houseColors: {
     'Blue':   'FFBDD7EE',
     'Red':    'FFF4CCCC',
@@ -747,9 +1172,7 @@ async function downloadXlsx() {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Student Division Reshuffler';
 
-  // ═══════════════════════════════════════════
-  //  SHEET: Combined (all students + division)
-  // ═══════════════════════════════════════════
+  // ═══ SHEET: Combined ═══
   const combSheet = wb.addWorksheet(`Grade ${nextGrade} Divisions`);
   const combHeaders = ['S.No.'];
   if (hasRoll) combHeaders.push('GR No.');
@@ -758,7 +1181,6 @@ async function downloadXlsx() {
   const combHdrRow = combSheet.addRow(combHeaders);
   applyHeaderStyle(combHdrRow);
 
-  // Column widths
   let ci = 1;
   combSheet.getColumn(ci++).width = 8;
   if (hasRoll) combSheet.getColumn(ci++).width = 10;
@@ -781,16 +1203,16 @@ async function downloadXlsx() {
     const row = combSheet.addRow(vals);
 
     let colIdx = 1;
-    applyDataCellStyle(row.getCell(colIdx++), 'center'); // S.No.
-    if (hasRoll) applyDataCellStyle(row.getCell(colIdx++), 'center'); // GR
-    applyDataCellStyle(row.getCell(colIdx++), 'left'); // Name
-    const divCell = row.getCell(colIdx++); // Division
+    applyDataCellStyle(row.getCell(colIdx++), 'center');
+    if (hasRoll) applyDataCellStyle(row.getCell(colIdx++), 'center');
+    applyDataCellStyle(row.getCell(colIdx++), 'left');
+    const divCell = row.getCell(colIdx++);
     applyDataCellStyle(divCell, 'center');
     divCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL.divisionBg } };
-    applyDataCellStyle(row.getCell(colIdx++), 'center'); // House
-    applyDataCellStyle(row.getCell(colIdx++), 'center'); // Religion
-    applyDataCellStyle(row.getCell(colIdx++), 'center'); // Gender
-    applyDataCellStyle(row.getCell(colIdx++), 'center'); // % Marks
+    applyDataCellStyle(row.getCell(colIdx++), 'center');
+    applyDataCellStyle(row.getCell(colIdx++), 'center');
+    applyDataCellStyle(row.getCell(colIdx++), 'center');
+    applyDataCellStyle(row.getCell(colIdx++), 'center');
     const tierCell = row.getCell(colIdx);
     applyDataCellStyle(tierCell, 'center');
     applyTierFill(tierCell, s.tier);
@@ -798,9 +1220,7 @@ async function downloadXlsx() {
 
   combSheet.autoFilter = { from: 'A1', to: combSheet.getRow(1).getCell(combHeaders.length).address };
 
-  // ═══════════════════════════════════════════
-  //  SHEETS: Per-Division (8A, 8B, 8C…)
-  // ═══════════════════════════════════════════
+  // ═══ SHEETS: Per-Division ═══
   for (const d of divLabels) {
     const ws = wb.addWorksheet(d);
     const group = [...allocations[d]].sort((a, b) => a.name.localeCompare(b.name));
@@ -831,11 +1251,11 @@ async function downloadXlsx() {
       let c = 1;
       applyDataCellStyle(row.getCell(c++), 'center');
       if (hasRoll) applyDataCellStyle(row.getCell(c++), 'center');
-      applyDataCellStyle(row.getCell(c++), 'left'); // Name
-      applyDataCellStyle(row.getCell(c++), 'center'); // House
-      applyDataCellStyle(row.getCell(c++), 'center'); // Religion
-      applyDataCellStyle(row.getCell(c++), 'center'); // Gender
-      applyDataCellStyle(row.getCell(c++), 'center'); // Marks
+      applyDataCellStyle(row.getCell(c++), 'left');
+      applyDataCellStyle(row.getCell(c++), 'center');
+      applyDataCellStyle(row.getCell(c++), 'center');
+      applyDataCellStyle(row.getCell(c++), 'center');
+      applyDataCellStyle(row.getCell(c++), 'center');
       const tc = row.getCell(c);
       applyDataCellStyle(tc, 'center');
       applyTierFill(tc, s.tier);
@@ -844,21 +1264,17 @@ async function downloadXlsx() {
     ws.autoFilter = { from: 'A1', to: ws.getRow(1).getCell(hdrs.length).address };
   }
 
-  // ═══════════════════════════════════════════
-  //  SHEET: Summary
-  // ═══════════════════════════════════════════
+  // ═══ SHEET: Summary ═══
   const sumSheet = wb.addWorksheet('Summary');
-  const numCols = divLabels.length + 2; // metric + divisions + total
+  const numCols = divLabels.length + 2;
   sumSheet.getColumn(1).width = 24;
   for (let i = 2; i <= numCols; i++) sumSheet.getColumn(i).width = 12;
 
-  // Helper: add a section title row
   const addSectionTitle = (text) => {
     const r = sumSheet.addRow([text]);
     r.getCell(1).font = { color: { argb: XL.sectionTitle }, bold: true, size: 12, name: 'Calibri' };
   };
 
-  // Helper: add a sub-header row (division labels)
   const addSubHeader = () => {
     const vals = ['', ...divLabels, 'Total'];
     const r = sumSheet.addRow(vals);
@@ -870,7 +1286,6 @@ async function downloadXlsx() {
     });
   };
 
-  // Helper: add a data row with optional label fill
   const addSumRow = (label, fn, labelFill) => {
     const vals = [label];
     let total = 0;
@@ -888,7 +1303,6 @@ async function downloadXlsx() {
     }
   };
 
-  // ── Division Summary section ──
   addSectionTitle('Division Summary');
   addSubHeader();
   addSumRow('Total Students', d => allocations[d].length);
@@ -897,7 +1311,6 @@ async function downloadXlsx() {
 
   sumSheet.addRow([]);
 
-  // ── Performance Tier Distribution ──
   addSectionTitle('Performance Tier Distribution');
   addSubHeader();
   addSumRow('High', d => allocations[d].filter(s => s.tier === 'High').length, XL.tierHigh);
@@ -906,7 +1319,6 @@ async function downloadXlsx() {
 
   sumSheet.addRow([]);
 
-  // ── House Distribution ──
   addSectionTitle('House Distribution');
   addSubHeader();
   for (const h of houses) {
@@ -915,7 +1327,6 @@ async function downloadXlsx() {
 
   sumSheet.addRow([]);
 
-  // ── House × Gender per Division ──
   addSectionTitle('House × Gender per Division');
   for (const d of divLabels) {
     sumSheet.addRow([]);
@@ -950,7 +1361,6 @@ async function downloadXlsx() {
   sumSheet.addRow([]);
   sumSheet.addRow([]);
 
-  // ── Tier Definitions ──
   addSectionTitle('Tier Definitions');
   const tierDefHigh = sumSheet.addRow(['HIGH', `>= ${tierBounds.highMin.toFixed(1)}%`]);
   tierDefHigh.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL.tierHigh } };
@@ -967,9 +1377,7 @@ async function downloadXlsx() {
   tierDefLow.getCell(1).font = { bold: true, size: 10, name: 'Calibri' };
   tierDefLow.getCell(2).font = { size: 10, name: 'Calibri' };
 
-  // ═══════════════════════════════════════════
-  //  Write & trigger download
-  // ═══════════════════════════════════════════
+  // ═══ Write & trigger download ═══
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
